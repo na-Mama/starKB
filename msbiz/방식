@@ -1,0 +1,1 @@
+WOFF FONTS: @font-face{font-family:'yourfontname'; src: url(data:application/font-woff;charset=utf-8;base64,YOUR BASE64 STRING HERE) format(woff);}
