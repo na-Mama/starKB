@@ -900,7 +900,8 @@ if (!UICommon) {
                             var $tabWidth = $active.outerWidth(),
                                 $listLeft = parseInt($list.css('margin-left')),
                                 sb = Number($active.css('margin-left').replace('px', '')),
-                                $tabLeft = $listLeft + $active.position().left + $btn.position().left + sb + 24;
+                                sp = ($this.hasClass('box')) ? 0 : 24,
+                                $tabLeft = $listLeft + $active.position().left + $btn.position().left + sb + sp;
                             $bar.css({ 'width': $tabWidth, 'left': $tabLeft });
                         }, 150);
                     }
@@ -965,7 +966,9 @@ if (!UICommon) {
                         tabMenu.tabSlider.slideTo(current);
                         $panel.eq(current).attr('aria-hidden', false);
                         $btn.on('click', function () {
-                            var $this = $(this), tabIndex = $this.index();
+                            var $this = $(this), 
+                                tabIndex = $this.index(),
+                                tabIndex = ($this.parent('.scroll_wrap').length) ? tabIndex : tabIndex - 1;
                             tabMenu.tabSlider.slideTo(tabIndex);
                             $panel.eq(tabIndex).attr('aria-hidden', false).siblings('.tab_panel').attr('aria-hidden', true);
                             if(isFixed) $('html, body').animate({scrollTop:_tabFix}, 300);
@@ -1297,7 +1300,8 @@ if (!UICommon) {
                 $('hr').attr('aria-hidden', 'true');
             },
             keypadDetect: function () {
-                if ($('html').hasClass('android')) {
+                var $exceptEl = '.m_new_guide';
+                if ($('html').hasClass('android') && !$($exceptEl).length) {
                     if (originalPotion !== false) {
                         var wasWithKeyboard = $('html').hasClass('keypad_open');
                         var nowWithKeyboard = false;
@@ -1369,6 +1373,24 @@ if (!UICommon) {
                     cssSet();
                 });
             },
+            btnClearSet: function (tar) { //input clear button set
+                var _this = tar;
+                var _parent = _this.parent(".input");
+                var _langRem = 10;
+                if (!_this.parents('.form_group').is('.between') && !_this.parents('.form_row').is('.col') && !_parent.is('.outline') && _this.is(':not([type=tel], [type=hidden])') && !_this.is('[readonly], [disabled]') && !_this.parents('.unit').is('.decimal') && !_parent.is('.date')) {
+                    var _inpBtn = _parent.find('.btn.point.round');
+                    var _inpBtnW = Math.round(_inpBtn.outerWidth()) / _langRem;
+
+                    _parent.find('.btn_clear').remove();
+                    _this.css('padding-right', 3.6 + 'rem').siblings(".btn_clear").css('right', 0.6 + 'rem');
+                    _parent.append('<button type="button" class="btn_clear"><span class="hidden">입력내용 초기화</span></button>');
+
+                    _this.val() == '' ? _parent.find('.btn_clear').hide() : _parent.find('.btn_clear').show();
+
+                    if (_this.is('[type=password]')) _this.css('padding-right', 3.6 + 'rem');
+                    if (_this.siblings('.btn_sch')) _this.css('padding-right', (Math.round(_this.siblings('.btn_sch').outerWidth()) / _langRem) + 3.6 + 'rem').siblings('.btn_clear').css('right', _this.siblings('.btn_sch').outerWidth() / _langRem + 'rem');
+                };
+            },
             form: function () {
                 var _doc = $(document);
                 var _langRem = 10;
@@ -1409,7 +1431,7 @@ if (!UICommon) {
                     var _this = $(this);
                     var _parent = _this.parent(".input");
                     var _valueL = _this.val().length;
-
+                    //UICommon._front.btnClearSet(_this); //input clear 추가
                     //_this.val().length > 0 ? _this.addClass('finished') :  _this.removeClass('finished');
                     if (!_this.is('[readonly]') && !_this.is('[disabled]')) {
                         _this.on('focusin', function () {
@@ -1477,20 +1499,7 @@ if (!UICommon) {
                             _parent.find('.btn_pencil').hide().siblings(".btn_clear").css('right', 0.6 + 'rem');
                         }
 
-                        //input clear 추가
-                        if (!_this.parents('.form_group').is('.between') && !_this.parents('.form_row').is('.col') && !_parent.is('.outline') && _this.is(':not([type=tel])') && !_this.is('[readonly], [disabled]') && !_this.parents('.unit').is('.decimal')) {
-                            var _inpBtn = _parent.find('.btn.point.round');
-                            var _inpBtnW = Math.round(_inpBtn.outerWidth()) / _langRem;
-
-                            _parent.find('.btn_clear').remove();
-                            _this.css('padding-right', 3.6 + 'rem').siblings(".btn_clear").css('right', 0.6 + 'rem');
-                            _parent.append('<button type="button" class="btn_clear"><span class="hidden">입력내용 초기화</span></button>');
-
-                            _this.val() == '' ? _parent.find('.btn_clear').hide() : _parent.find('.btn_clear').show();
-
-                            if (_this.is('[type=password]')) _this.css('padding-right', 3.6 + 'rem');
-                            if (_this.siblings('.btn_sch')) _this.css('padding-right', (Math.round(_this.siblings('.btn_sch').outerWidth()) / _langRem) + 3.6 + 'rem').siblings('.btn_clear').css('right', _this.siblings('.btn_sch').outerWidth() / _langRem + 'rem');
-                        };
+                        UICommon._front.btnClearSet(_this); //input clear 추가
 
                         //input 버튼 여백
                         if (_parent.find('.btn.point.round').length) {
@@ -2078,8 +2087,8 @@ if (!UICommon) {
 
         var uiMain = {
             init: function () {
-                uiMain.btnTop();
                 uiMain.appBar();
+                uiMain.btnTop();
                 uiMain.trigger();
                 uiMain.nowListPos();
                 UICommon._front.fixed('.m_service_tab .tab_wrap .tab_list_wrap');
@@ -2089,10 +2098,12 @@ if (!UICommon) {
             },
             btnTop: function () {
                 if(!$('.m_btn_top').length) $('#content').append('<button type="button" class="m_btn_top"><span class="hidden">화면최상단으로 이동</span></button>');
+                var $appBar = $('.m_app_bar'),
+                    $btnTop = $('.m_btn_top');
+                ($appBar.length) ? $btnTop.css('bottom', $appBar.outerHeight()+20) : $btnTop.css('bottom', 20);
                 $(window).on('scroll', function () {
-                    var $scrollTop = $(this).scrollTop(),
-                        $top = $('.m_btn_top');
-                    ($scrollTop > 100) ? $top.addClass('show') : $top.removeClass('show');
+                    var $scrollTop = $(this).scrollTop();
+                    ($scrollTop > 100) ? $btnTop.addClass('show') : $btnTop.removeClass('show');
                 });
                 $(window).scroll();
                 $(document).on('click', '.m_btn_top', function (e) {
@@ -2106,8 +2117,10 @@ if (!UICommon) {
                 }, 1000);
             },
             nowListPos: function () {
+                var $mNowList = $('.m_now_list');
+                if(!$mNowList.length) return false;
                 var _areaH = $('.m_head_util').outerHeight() + 216;
-                var _top = $('.m_now_list').offset().top;
+                var _top = $mNowList.offset().top;
                 (_areaH > _top) ? $('.m_now_list').addClass('reverse') : $('.m_now_list').removeClass('reverse');
             },
             numCopy: function () {
@@ -2665,11 +2678,19 @@ if (!UICommon) {
                                     //if ($directionY === 'up' && $this.hasScroll()) {
                                     if ($directionY === 'up') {
                                         $wrap.animate({ height: '100%' }, $animateSpeed);
-                                        $tabScroller.css('max-height', $(window).height() - _headH - _footH - _tabH - 60);
+                                        $tabScroller.css('max-height', parseInt(Layer.popMaxH - _headH - _footH - _tabH));
                                         $tabScroller.removeClass('scroll').addClass('on');
                                         $tabScroller.css('overflow-y','');
                                     } else if ($directionY === 'down' && $tabScroller.hasClass('scroll')) {
                                         $wrap.animate({ height: $popup.data('isWrapH') }, $animateSpeed);
+                                        const _popH = parseInt(($(window).height() / 3) * 2);
+                                        setTimeout(function(){
+                                            if ($popup.hasClass('transfer') || $popup.hasClass('half') || $popup.hasClass('default')) {
+                                                $tabScroller.css('max-height', parseInt($popup.data('isBodyH') - _tabH));
+                                            } else {
+                                                $tabScroller.css('max-height', parseInt(_popH - _headH - _footH - _tabH));
+                                            }
+                                        }, 300);
                                     }
                                 }
                             }
@@ -2746,6 +2767,7 @@ if (!UICommon) {
             openEl: '',
             openPop: [],
             opening: 0,
+            popMaxH: $(window).height() - 30,
             open: function (tar, popTitle, popClose, callback) {
                 const $popup = $(tar);
                 const $popWrap = $popup.find('.' + Layer.wrapClass);
@@ -2753,7 +2775,7 @@ if (!UICommon) {
                 const $btnPopClose = $popup.find('.pop_wrap .pop_close');
                 const $tabScroller = $popup.find('.' + Layer.tabClass);
                 $('html').removeClass('keypad_open');
-                if($popup.closest('#wrap').length && $popup.find($inputEl).length){
+                if($popup.closest('#wrap').length && $popup.find($inputEl).length || $popup.hasClass('more')){
                     $('#wrap').after($popup);
                 }
                 if ($('#wrap').length && !$popup.hasClass('no_dimmed')) $('#wrap').attr('aria-hidden', true);
@@ -2891,6 +2913,7 @@ if (!UICommon) {
                                 const $foot = $wrap.find('.' + Layer.footClass);
                                 const $body = $wrap.find('.' + Layer.bodyClass);
                                 const _contH = $wrap.find('.' + Layer.contClass).height();
+                                const $tabScroller = $body.find('.tab_scroller');
                                 let _footH = 0;
                                 let _popH = 0;
                                 let isScroll = false;
@@ -2899,18 +2922,20 @@ if (!UICommon) {
                                     $popup.addClass('foot');
                                     $wrap.css('padding-bottom', _footH);
                                 }
+                                $wrap.css('max-height', Layer.popMaxH);
+                                $body.css('max-height', Layer.popMaxH - _headH - _footH);
                                 if ($popup.hasClass('transfer')) {
                                     var $popMark = $('.pop_mark');
                                     if ($popMark.length) {
-                                        var _tH = $(window).height() - ($popMark.offset().top + $popMark.height() + 24);
+                                        var _tH = parseInt($(window).height() - ($popMark.offset().top + $popMark.height() + 24));
                                         _popH = (230 > _tH) ? 230 : _tH;
                                     } else {
-                                        _popH = ($(window).height() / 3) * 2;
+                                        _popH = parseInt(($(window).height() / 3) * 2);
                                     }
                                 } else if ($popup.hasClass('half')) {
-                                    _popH = $(window).height() / 2;
+                                    _popH = parseInt($(window).height() / 2);
                                 } else if ($popup.hasClass('default')) {
-                                    _popH = ($(window).height() / 3) * 2;
+                                    _popH = parseInt(($(window).height() / 3) * 2);
                                 }
                                 let _bodyH = _popH - _headH - _footH;
                                 (_bodyH < _contH || $popup.find('.tab_wrap').length) ? isScroll = true : $body.removeClass('scroll').addClass('no_scroll');
@@ -2921,6 +2946,11 @@ if (!UICommon) {
                                         $popup.data('isBodyH', _bodyH);
                                     }
                                 }
+                                //탭 컨텐츠 스크롤이 필요할때
+                                if($tabScroller.length) {
+                                    const _tabH = $body.find('.tab_list').outerHeight();
+                                    $tabScroller.css('max-height', parseInt(_bodyH - _tabH));
+                                }
                                 //swipe 기능
                                 if ($popup.hasClass('is_swipe') && !$popup.hasClass('is_swipe__init') || $popup.hasClass('body_swipe')) {
                                     $popup.addClass('is_swipe__init');
@@ -2928,23 +2958,6 @@ if (!UICommon) {
                                 }
                             }
                         }, 100);
-
-                        // if($popup.find($inputEl).length){
-                        //     var $input = $popup.find($inputEl);
-                        //     var $scroller = $popup.find('.pop_body');
-                        //     if($scroller.find('.tab_wrap').length) $scroller = $popup.find('.tab_scroller');
-                        //     $input.on('focus', function (e) {
-                        //         if($('html').hasClass('keypad_open')){
-                        //             var $formGroup = $(this).closest('.form_group');
-                        //             var $formTit = $formGroup.find('.form_tit');
-                        //             var $tabRadio = $formGroup.find('.tab_radio');
-                        //             var scrollTo = $formGroup.position().top;
-                        //             if($formTit.length) scrollTo = scrollTo + $formTit.outerHeight();
-                        //             if($tabRadio.length) scrollTo = scrollTo + $tabRadio.outerHeight();
-                        //             $scroller.animate({ scrollTop: scrollTo }, 300);
-                        //         }
-                        //     });
-                        // }
 
                         setTimeout(function () {
                             if (!$popup.hasClass('no_dimmed')) $FocusEvt();
@@ -3095,29 +3108,11 @@ if (!UICommon) {
                     const $tit = $head.find('h1');
                     const $foot = $wrap.find('.' + Layer.footClass);
                     const $body = $wrap.find('.' + Layer.bodyClass);
-                    const $tabScroller = $body.find('.tab_scroller');
                     const _bodyH = $body.find('.pop_section').outerHeight();
                     let _footH = 0;
 
                     $head.removeAttr('style').removeClass('shadow');
                     $body.removeAttr('tabindex style');
-
-                    //컨텐츠 스크롤이 필요할때
-                    var $height = $(window).height() - 30;
-                    if ($this.hasClass('bottom') || $this.hasClass('modal')) {
-                        if ($foot.length) {
-                            _footH = $foot.outerHeight();
-                            $this.addClass('foot');
-                            $wrap.css('padding-bottom', _footH);
-                        }
-                        $wrap.css('max-height', $height);
-                        $body.css('max-height', $height - _headH - _footH);
-                        if($tabScroller.length) {
-                            const _tabH = $body.find('.tab_list').outerHeight();
-                            $tabScroller.css('max-height', $height - _headH - _footH - _tabH);
-                        }
-                    }
-
 
                     //바텀시트 선택요소로 스크롤
                     if ($this.hasClass(Layer.selectClass) && $this.find('.selected').length && !$wrap.hasClass('scrolling')) {
@@ -3200,8 +3195,6 @@ if (!UICommon) {
                 const $body = $popup.find('.' + Layer.bodyClass);
                 const $foot = $popup.find('.' + Layer.footClass);
                 const $footBtn = $foot.find('.button');
-
-                //Layer.resize();
                 Layer.fixed($wrap);
             },
             focusMove: function (tar) {
@@ -3445,7 +3438,9 @@ if (!UICommon) {
 
                     let baseSwiper;
                     let newGuideTime;
-                    if ($swiper.hasClass('swiper-initialized')) {
+                    if($this.find('.swiper-slide').length == 1 && $this.hasClass('img_banner')) {
+                        $this.addClass('no_swiper');
+                    } else if($swiper.hasClass('swiper-initialized')) {
                         baseSwiper = $this.data('swiper');
                         if (baseSwiper !== undefined) baseSwiper.update();
                     } else {
