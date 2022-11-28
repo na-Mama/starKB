@@ -2,7 +2,7 @@
  * KB기업 2022
  * JS Loader : A Temp File
  */
-if (!UICommon) {
+ if (!UICommon) {
     var UICommon = function () {
         function constructor() {
             return UICommon();
